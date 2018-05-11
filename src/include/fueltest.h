@@ -1,4 +1,5 @@
 #include <string>
+#include <stdexcept>
 
 class FuelTest {
 public:

@@ -21,7 +21,7 @@ OBJECTS := $(addprefix $(TMPDIR)/,$(notdir $(SOURCES:.$(SRCEXT)=.o)))
 
 TARGET := $(BINDIR)/$(BIN)
 CXXFLAGS := -g -Wall
-LDFLAGS := 
+LDFLAGS := -ldl -lboost_system -lboost_filesystem
 PKGCFG := `pkg-config --cflags --libs gtkmm-3.0`
 INCLUDES := -I./$(INCDIR)
 
