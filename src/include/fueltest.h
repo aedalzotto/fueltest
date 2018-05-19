@@ -1,29 +1,59 @@
+#ifndef _FT_MAIN_H
+#define _FT_MAIN_H
+
 #include <string>
 #include <stdexcept>
+#include <boost/asio.hpp>
+#include <boost/asio/serial_port.hpp>
+#include <vector>
+#include <chrono>
+#include <thread>
+
+#include "serial.h"
+
+class FTGui;
 
 class FuelTest {
 public:
     FuelTest();
-    void auto_connect();
+    void auto_connect(uint32_t baud);
+    void disconnect();
     void tare();
     void stop_transmission();
-    void transmit(unsigned int frequency);
-    void dump_transmission(std::string filename);
+    void init_transmission();
+    void set_dump_filename(std::string name);
+
+    void monitor(FTGui *caller, bool dump);
 
     bool is_connected();
-    bool is_transmission_active();
     float get_last_weight();
     unsigned long get_last_rtime();
 
 private:
-    void add_checksum(uint8_t &buffer, uint8_t sz, uint8_t &ck_a, uint8_t &ck_b);
-    bool verify_checksum(uint8_t &buffer, uint8_t size);
+    
+    Serial serial;
+    std::mutex val_mtx;
 
-    bool connected;
-    bool transmitting;
+    std::string filename;
+
     float last_weight;
-    unsigned long first_point_time;
-    unsigned long last_point_time;
-    uint8_t out_buffer[8];
-    uint8_t in_buffer[12];
+    uint64_t last_point_time;;
+    uint64_t point_count;
+
+    enum comm {
+        HDR = 0x41,
+
+        CON = 0x63,
+        TAR = 0x74,
+        CAL = 0x99,
+        INI = 0x69,
+        STP = 0x73,
+
+        STA = 0x70,
+        ACK = 0x61,
+        NCK = 0x6E
+    };
 };
+
+
+#endif /* _FT_MAIN_H */

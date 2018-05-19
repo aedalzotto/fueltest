@@ -20,7 +20,7 @@ TMPDIR := tmp
 OBJECTS := $(addprefix $(TMPDIR)/,$(notdir $(SOURCES:.$(SRCEXT)=.o)))
 
 TARGET := $(BINDIR)/$(BIN)
-CXXFLAGS := -g -Wall
+CXXFLAGS := -g -Wall -Wno-parentheses
 LDFLAGS := -ldl -lboost_system -lboost_filesystem
 PKGCFG := `pkg-config --cflags --libs gtkmm-3.0`
 INCLUDES := -I./$(INCDIR)
@@ -52,6 +52,6 @@ $(CPGLADE): $(GLADEFILES)
 
 clean:
 	@echo "Cleaning..."
-	@$(RM) -rf $(BUILDDIR) $(BINDIR) $(SHAREDIR)
+	@$(RM) -rf $(BUILDDIR) $(BINDIR) $(SHAREDIR) $(TMPDIR)
 
 .PHONY: clean
