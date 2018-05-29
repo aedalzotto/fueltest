@@ -21,11 +21,11 @@ void FuelTest::auto_connect(uint32_t baud)
         serial.write_buffer_blocking(buf, 2);
         for(int i = 0; i < 3; i++){
             try {
-                if(serial.read_timeout<char>(1500) != buf[i]){
+                if(serial.read_timeout<char>(2000) != buf[i]){ 
                     serial.close();
                     break;
                 }
-            } catch(...){
+            } catch(const std::exception &ex){
                 serial.close();
                 break;
             }
@@ -44,6 +44,12 @@ void FuelTest::disconnect()
 
 void FuelTest::monitor(FTGui *caller, bool dump)
 {
+    std::ofstream dumpfile;
+    if(dump){
+        dumpfile.open(filename);
+        dumpfile << std::fixed;
+    }
+    
     point_count = 0;
     while(true){
         try {
@@ -52,8 +58,11 @@ void FuelTest::monitor(FTGui *caller, bool dump)
             
             char input = serial.read_timeout<char>();
             if(input == comm::STP){
-                if(serial.read_timeout<char>() == comm::ACK)
+                if(serial.read_timeout<char>() == comm::ACK){
+                    if(dump)
+                        dumpfile.close();
                     return;
+                }
                 else
                     continue;
                 
@@ -64,10 +73,14 @@ void FuelTest::monitor(FTGui *caller, bool dump)
             point_count++;
             serial.read_buffer_timeout((uint8_t*)&last_point_time, 8, 500);
             serial.read_buffer_timeout((uint8_t*)&last_weight, 4, 500);
+            if(dump)
+                dumpfile << last_point_time << "," << last_weight << std::endl;
             val_mtx.unlock();
             caller->notify_update();
         } catch(...){
             val_mtx.unlock();
+            if(dump)
+                dumpfile.close();
             caller->notify_timeout();
             return;
         }
@@ -115,10 +128,24 @@ void FuelTest::tare()
     serial.write_buffer_blocking(buf, 2);
     for(int i = 0; i < 3; i++){
         try {
-            if(serial.read_timeout<char>() != buf[i])
+            if(serial.read_timeout<uint8_t>(1000) != buf[i])
                 throw std::runtime_error("Communication error");
         } catch(...){
             throw;
         }
     }
+}
+
+void FuelTest::set_dump_filename(std::string name)
+{
+    filename = name;
+}
+
+unsigned long FuelTest::get_point_count()
+{
+    unsigned long ret;
+    val_mtx.lock();
+    ret = point_count;
+    val_mtx.unlock();
+    return ret;
 }

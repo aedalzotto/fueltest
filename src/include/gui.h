@@ -22,8 +22,10 @@ private:
     void on_button_record_clicked();
     void on_notification_from_monitor();
     void on_timeout_received();
+    void on_button_finnish_clicked();
 
     void error(std::string errmsg, Gtk::Window *parent);
+    void run_sampling_window();
 
     FuelTest ft;
     std::thread rtmon;
@@ -31,6 +33,7 @@ private:
     Glib::Dispatcher error_disp;
 
     bool connected;
+    bool dumping;
 
     std::stringstream file_glade;
     Glib::RefPtr<Gtk::Builder> builder_main;
@@ -43,6 +46,9 @@ private:
     Gtk::Label *label_status;
     Gtk::Label *label_weight;
 
+    Gtk::Window *window_sampling;
+    Gtk::Label *label_sampling;
+    Gtk::Button *button_finnish;
 };
 
 #endif /* _FT_GUI_H_ */

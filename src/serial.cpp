@@ -42,28 +42,32 @@ void Serial::read_buffer_timeout(uint8_t *buffer, size_t size, size_t timeout_ms
 {
     if(!port.is_open())
         throw std::runtime_error("Port is closed");
-
+    
     boost::optional<boost::system::error_code> timer_result;
     boost::asio::deadline_timer timer(port.get_io_service());
     timer.expires_from_now(boost::posix_time::milliseconds(timeout_ms));
-    timer.async_wait([&timer_result] (const boost::system::error_code& error){ 
-                        timer_result.reset(error);});
+    timer.async_wait([&timer_result] (const boost::system::error_code& error)
+                        {
+                            timer_result.reset(error);
+                        });
 
     boost::optional<boost::system::error_code> read_result;
     boost::asio::async_read(port, boost::asio::buffer(buffer, size),
-                            [&read_result] (const boost::system::error_code& error,
-                            size_t) { read_result.reset(error); });
+                            [&read_result] (const boost::system::error_code& error, size_t)
+                            {
+                                read_result.reset(error);
+                            });
 
     port.get_io_service().reset();
-
-    while (port.get_io_service().run_one()){ 
+    while (port.get_io_service().run_one())
+    { 
         if(read_result)
             timer.cancel();
         else if(timer_result)
             port.cancel();
     }
 
-    if(*read_result)
+    if (*read_result)
         throw boost::system::system_error(*read_result);
 }
 

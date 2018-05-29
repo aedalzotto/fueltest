@@ -29,8 +29,8 @@ public:
         T data;
         try {
             read_buffer_timeout((uint8_t*)&data, sizeof(data), timeout_ms);
-        } catch(const boost::system::system_error &ex){
-            throw ex;
+        } catch(...){
+            throw;
         }
         return data;
     }

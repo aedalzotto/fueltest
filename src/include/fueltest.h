@@ -8,6 +8,10 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <fstream>
+
+
+#include <iostream>
 
 #include "serial.h"
 
@@ -28,6 +32,7 @@ public:
     bool is_connected();
     float get_last_weight();
     unsigned long get_last_rtime();
+    unsigned long get_point_count();
 
 private:
     
