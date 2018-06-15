@@ -23,6 +23,7 @@ public:
     void auto_connect(uint32_t baud);
     void disconnect();
     void tare();
+    void calibrate(float weight);
     void stop_transmission();
     void init_transmission();
     void set_dump_filename(std::string name);

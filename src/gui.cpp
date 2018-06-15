@@ -147,9 +147,51 @@ void FTGui::on_button_tare_clicked()
 
 void FTGui::on_button_calibrate_clicked()
 {
-    Gtk::MessageDialog dialog(*window_main, "Atenção", false, Gtk::MESSAGE_ERROR);
-    dialog.set_secondary_text("Função não implementada.");
-    dialog.run();
+    Gtk::Dialog dialog;
+    dialog.set_title("Inserir massa");
+    Gtk::Entry entry_weight;
+    entry_weight.set_activates_default(true);
+    entry_weight.set_max_length(5);
+    entry_weight.set_text("1.0");
+    entry_weight.select_region(0, entry_weight.get_text_length());
+    entry_weight.set_alignment(0.5);
+    Gtk::Label label_tip;
+    label_tip.set_text("Posicione a massa na célula e insira o valor abaixo:");
+    dialog.get_vbox()->pack_start(label_tip);
+    dialog.get_vbox()->pack_start(entry_weight, Gtk::PACK_SHRINK);
+
+    dialog.add_button("_Cancel", Gtk::ResponseType::RESPONSE_CANCEL);
+    dialog.add_button("Calibrar", Gtk::ResponseType::RESPONSE_OK);
+    dialog.set_transient_for(*window_main);
+    dialog.show_all();
+    
+    switch(dialog.run()){
+    case Gtk::ResponseType::RESPONSE_OK:
+        float value;
+        try {
+            value = std::stof(entry_weight.get_text())*9.8; //Send newtons
+        } catch(std::exception &ex){
+            Gtk::MessageDialog dialog(*window_main, "ERRO", false, Gtk::MESSAGE_ERROR);
+            dialog.set_secondary_text(ex.what());
+            dialog.run();
+            return;
+        }
+        try {
+            ft.stop_transmission();
+            rtmon.join();
+            ft.calibrate(value);
+            ft.init_transmission();
+            rtmon = std::thread(&FuelTest::monitor, &ft, this, false);
+        } catch(std::exception &ex){
+            error(ex.what(), window_main);
+            return;
+        }
+        break;
+    case Gtk::ResponseType::RESPONSE_CANCEL:
+    default:
+        break;
+    }
+
 }
 
 void FTGui::on_button_record_clicked()
