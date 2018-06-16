@@ -109,7 +109,8 @@ Gtk::Window* FTGui::ft_main()
     //Signals of the sampling window
     button_finnish->signal_clicked().connect(
                 sigc::mem_fun(*this, &FTGui::on_button_finnish_clicked));
-
+    
+    window_main->set_position(Gtk::WIN_POS_CENTER);
     //Return main window to be shown by main
     return window_main;
 }
