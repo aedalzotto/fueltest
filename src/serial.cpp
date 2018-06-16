@@ -1,7 +1,7 @@
 #include "serial.h"
 
 #ifdef _WIN32
-
+#include <windows.h>
 #else
 #include <dirent.h>
 #include <sys/stat.h>
@@ -19,6 +19,10 @@ void Serial::begin(std::string portname, size_t baud)
     try {
         port.open(portname);
         port.set_option(boost::asio::serial_port_base::baud_rate(baud));
+        port.set_option(boost::asio::serial_port_base::character_size(8));
+		port.set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+		port.set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+		port.set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
     } catch(const boost::system::system_error &ex){
         throw ex;
     }
@@ -77,7 +81,16 @@ void Serial::flush()
         throw std::runtime_error("Port is closed");
 
 #ifdef _WIN32
-
+    HANDLE native_port = port.native_handle();
+	if(!PurgeComm(native_port, PURGE_RXCLEAR | PURGE_TXCLEAR)){
+        LPSTR messageBuffer = nullptr;
+		DWORD errorMessageID = GetLastError();
+        size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                     NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+        std::string message(messageBuffer, size);
+        LocalFree(messageBuffer);
+        throw std::runtime_error(message);
+    }
 #else
     int native_port = port.native_handle();
     if(::tcflush(native_port, TCIOFLUSH))
@@ -99,14 +112,31 @@ bool Serial::is_open()
 
 std::vector<std::string> Serial::list_ports()
 {
+    std::vector<std::string> ports;
 #ifdef _WIN32
+    /* This was made by Gabriel Kressin */
+	HKEY Key;
+    DWORD Sz = 50;
+    char Name[50],Value[50];
 
+    if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_READ, &Key))
+        return ports;
+
+    for(int i=0; RegEnumValue(Key, i, Name, &Sz, NULL, NULL, NULL, NULL) == 0 ; i++)
+    {
+        if(RegQueryValueEx(Key, Name, 0, NULL, (LPBYTE)Value, &Sz) == 0)
+            ports.push_back(Value);
+        Sz = 50;
+    }
+
+    RegCloseKey(Key);
+    
 #else //Unix
     struct dirent *ent;
     struct stat sb;
     DIR *dir;
 
-    std::vector<std::string> ports;
+    
 
     if(!::stat("/dev/serial/by-id", &sb) && S_ISDIR(sb.st_mode))
         dir = ::opendir("/dev/serial/by-id");
@@ -118,6 +148,6 @@ std::vector<std::string> Serial::list_ports()
             ports.push_back("/dev/serial/by-id/"+std::string(ent->d_name));
 
     ::closedir(dir);
-    return ports;
 #endif
+    return ports;
 }

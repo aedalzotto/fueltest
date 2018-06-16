@@ -1,8 +1,6 @@
 #include "fueltest.h"
 #include "gui.h"
 
-#include <iostream>
-
 FuelTest::FuelTest() : serial()
 {
 
@@ -155,7 +153,6 @@ unsigned long FuelTest::get_point_count()
 void FuelTest::calibrate(float weight)
 {
     serial.flush();
-    std::cout << weight << std::endl;
     static const uint8_t buf[3] = {comm::HDR, comm::CAL, comm::ACK};
     serial.write_buffer_blocking(buf, 2);
     serial.write_buffer_blocking((uint8_t*)&weight, sizeof(weight));
@@ -167,5 +164,4 @@ void FuelTest::calibrate(float weight)
             throw;
         }
     }
-    std::cout << (float)serial.read_timeout<float>(2000) << std::endl;
 }
